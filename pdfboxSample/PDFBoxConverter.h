@@ -1,4 +1,4 @@
-// PDFBoxConverter.h
+﻿// PDFBoxConverter.h
 //
 
 #pragma once
@@ -30,6 +30,8 @@ namespace Hnc { namespace Converter {
 		_jclass*	m_TargetClass;
 		_jmethodID*	m_PDFToImageMethodID;
 		_jmethodID*	m_PDFToTextMethodID;
+		_jmethodID*	m_initializeMethodID;
+		_jmethodID*	m_getPageCountMethodID;
 	}; // class PDFBox
 
 }} // Hnc::Converter

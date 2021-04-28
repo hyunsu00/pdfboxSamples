@@ -1,18 +1,45 @@
-// PDFBoxConverter.cpp
+﻿// PDFBoxConverter.cpp
 //
-#define _SILENCE_ALL_CXX17_DEPRECATION_WARNINGS
-
 #include "PDFBoxConverter.h"
-#include <locale> // std::wstring_convert
-#include <codecvt> // std::codecvt_utf8
 #include <jni.h>
+#include <string>
+#define _ASSERTE
 
-static const char* const PDFBOX_JAR_CLASSPATH = u8"-Djava.class.path=./PDFBoxModule.jar;./lib/PDFBoxModule.jar;";
-static const char* const PDFBOX_CLASS_NAME = u8"PDFBoxModule";
-static const char* const PDFBOX_CONVERT_IMAGE_METHOD_NAME = u8"ConvertPDFToImage";
-static const char* const PDFBOX_CONVERT_TEXT_METHOD_NAME = u8"ConvertPDFToText";
+static const char* const PDFBOX_JAR_CLASSPATH = "-Djava.class.path=./PDFBoxModule.jar;./lib/PDFBoxModule.jar;";
+static const char* const PDFBOX_CLASS_NAME = "PDFBoxModule";
+static const char* const PDFBOX_CONVERT_IMAGE_METHOD_NAME = "ConvertPDFToImage";
+static const char* const PDFBOX_CONVERT_TEXT_METHOD_NAME = "ConvertPDFToText";
+static const char* const PDFBOX_INITIALIZE_METHOD_NAME = "PDFModuleInitialize";
+static const char* const PDFBOX_GETPAGECOUNT_METHOD_NAME = "GetPDFPageCount";
 
 namespace Hnc { namespace Converter {
+
+	static std::string _W2U(const std::wstring& wstr)
+	{
+		std::string ustr;
+		for (size_t i = 0; i < wstr.size(); i++){
+			wchar_t w = wstr[i];
+			if (w <= 0x7f) {
+				ustr.push_back((char)w);
+			} else if (w <= 0x7ff) {
+				ustr.push_back(0xc0 | ((w >> 6)& 0x1f));
+				ustr.push_back(0x80| (w & 0x3f));
+			} else if (w <= 0xffff) {
+				ustr.push_back(0xe0 | ((w >> 12)& 0x0f));
+				ustr.push_back(0x80| ((w >> 6) & 0x3f));
+				ustr.push_back(0x80| (w & 0x3f));
+			} else if (w <= 0x10ffff) {
+				ustr.push_back(0xf0 | ((w >> 18)& 0x07));
+				ustr.push_back(0x80| ((w >> 12) & 0x3f));
+				ustr.push_back(0x80| ((w >> 6) & 0x3f));
+				ustr.push_back(0x80| (w & 0x3f));
+			} else {
+				ustr.push_back('?');
+			}
+
+			return ustr;
+		}
+	}
 
 	PDFBox::PDFBox()
 	: m_Env(nullptr)
@@ -20,6 +47,8 @@ namespace Hnc { namespace Converter {
 	, m_TargetClass(nullptr)
 	, m_PDFToImageMethodID(nullptr)
 	, m_PDFToTextMethodID(nullptr)
+	, m_initializeMethodID(nullptr)
+	, m_getPageCountMethodID(nullptr)
 	{
 	}
 
@@ -64,6 +93,18 @@ namespace Hnc { namespace Converter {
 			"(Ljava/lang/String;Ljava/lang/String;)Z"
 		);
 
+		m_initializeMethodID = m_Env->GetStaticMethodID(
+			m_TargetClass, 
+			PDFBOX_INITIALIZE_METHOD_NAME, 
+			"(Ljava/lang/String;Ljava/lang/String;)Z"
+		);
+
+		m_getPageCountMethodID = m_Env->GetStaticMethodID(
+			m_TargetClass, 
+			PDFBOX_GETPAGECOUNT_METHOD_NAME, 
+			"()I"
+		);
+
 		return true;
 	}
 
@@ -83,12 +124,27 @@ namespace Hnc { namespace Converter {
 			return false;
 		}
 
-		std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> _W2U;
-
-		jstring jsoureFile = m_Env->NewStringUTF(_W2U.to_bytes(sourceFile).c_str());
-		jstring jtargetDir = m_Env->NewStringUTF(_W2U.to_bytes(targetDir).c_str());
+		jstring jsoureFile = m_Env->NewStringUTF(_W2U(sourceFile).c_str());
+		jstring jtargetDir = m_Env->NewStringUTF(_W2U(targetDir).c_str());
 
 		bool result = m_Env->CallStaticBooleanMethod(
+			m_TargetClass, 
+			m_initializeMethodID, 
+			jsoureFile,
+			jtargetDir, 
+			dpi
+		);
+		_ASSERTE(result && "m_Env->CallStaticBooleanMethod() Failed");
+		if (!result) {
+			return false;
+		}
+
+		int32_t pageCount = m_Env->CallStaticIntMethod(m_TargetClass, m_getPageCountMethodID);
+		if (pageCount == -1) {
+			return false;
+		}
+
+		result = m_Env->CallStaticBooleanMethod(
 			m_TargetClass,
 			m_PDFToImageMethodID, 
 			jsoureFile,
@@ -112,10 +168,8 @@ namespace Hnc { namespace Converter {
 			return false;
 		}
 
-		std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> _W2U;
-
-		jstring jsoureFile = m_Env->NewStringUTF(_W2U.to_bytes(sourceFile).c_str());
-		jstring jtargetDir = m_Env->NewStringUTF(_W2U.to_bytes(targetDir).c_str());
+		jstring jsoureFile = m_Env->NewStringUTF(_W2U(sourceFile).c_str());
+		jstring jtargetDir = m_Env->NewStringUTF(_W2U(targetDir).c_str());
 
 		bool result = m_Env->CallStaticBooleanMethod(
 			m_TargetClass,
