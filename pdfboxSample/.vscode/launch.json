@@ -9,13 +9,13 @@
 			"type": "cppdbg",
 			"request": "launch",
 			"program": "${workspaceFolder}/build/pdfboxTester",
-			"args": [],
-			// "args": [
-			// 	"-s",
-			// 	"/samples/sample01.pdf",
-			// 	"-r",
-			// 	"/samples/result"
-			// ],
+			// "args": [],
+			"args": [
+				"-s",
+				"/samples/sample01.pdf",
+				"-r",
+				"/samples/result"
+			],
 			"stopAtEntry": false,
 			"cwd": "${workspaceFolder}/build",
 			"environment": [],

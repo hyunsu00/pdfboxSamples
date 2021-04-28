@@ -8,7 +8,7 @@ struct JavaVM_;
 class _jclass;
 struct _jmethodID;
 
-namespace Hnc { namespace Converter {
+namespace PDF { namespace Converter {
 
 	class PDFBox 
 	{
@@ -30,8 +30,8 @@ namespace Hnc { namespace Converter {
 		_jclass*	m_TargetClass;
 		_jmethodID*	m_PDFToImageMethodID;
 		_jmethodID*	m_PDFToTextMethodID;
-		_jmethodID*	m_initializeMethodID;
-		_jmethodID*	m_getPageCountMethodID;
+		_jmethodID*	m_InitializeMethodID;
+		_jmethodID*	m_GetPageCountMethodID;
 	}; // class PDFBox
 
-}} // Hnc::Converter
+}} // PDF::Converter

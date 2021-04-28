@@ -3,16 +3,26 @@
 #include "PDFBoxConverter.h"
 #include <jni.h>
 #include <string>
-#define _ASSERTE
+#include <memory>
+#include "debug_assert.h"
 
-static const char* const PDFBOX_JAR_CLASSPATH = "-Djava.class.path=./PDFBoxModule.jar;./lib/PDFBoxModule.jar;";
-static const char* const PDFBOX_CLASS_NAME = "PDFBoxModule";
-static const char* const PDFBOX_CONVERT_IMAGE_METHOD_NAME = "ConvertPDFToImage";
-static const char* const PDFBOX_CONVERT_TEXT_METHOD_NAME = "ConvertPDFToText";
-static const char* const PDFBOX_INITIALIZE_METHOD_NAME = "PDFModuleInitialize";
-static const char* const PDFBOX_GETPAGECOUNT_METHOD_NAME = "GetPDFPageCount";
+#ifdef _WIN32
+#else
+#	include <libgen.h> // dirname
+#	include <unistd.h> // readlink
+#	include <memory.h> // memset
+#endif
 
-namespace Hnc { namespace Converter {
+static const char* const PDFBOX_JAR_CLASSPATH_NAME = u8"-Djava.class.path=";
+static const char* const PDFBOX_MODULE_FILE_NAME = u8"PDFBoxModule.jar";
+static const char* const PDFBOX_JAR_CLASSPATH = u8"-Djava.class.path=./PDFBoxModule.jar;./lib/PDFBoxModule.jar;";
+static const char* const PDFBOX_CLASS_NAME = u8"PDFBoxModule";
+static const char* const PDFBOX_CONVERT_IMAGE_METHOD_NAME = u8"ConvertPDFToImage";
+static const char* const PDFBOX_CONVERT_TEXT_METHOD_NAME = u8"ConvertPDFToText";
+static const char* const PDFBOX_INITIALIZE_METHOD_NAME = u8"PDFModuleInitialize";
+static const char* const PDFBOX_GETPAGECOUNT_METHOD_NAME = u8"GetPDFPageCount";
+
+namespace PDF { namespace Converter {
 
 	static std::string _W2U(const std::wstring& wstr)
 	{
@@ -36,9 +46,8 @@ namespace Hnc { namespace Converter {
 			} else {
 				ustr.push_back('?');
 			}
-
-			return ustr;
 		}
+		return ustr;
 	}
 
 	PDFBox::PDFBox()
@@ -47,8 +56,8 @@ namespace Hnc { namespace Converter {
 	, m_TargetClass(nullptr)
 	, m_PDFToImageMethodID(nullptr)
 	, m_PDFToTextMethodID(nullptr)
-	, m_initializeMethodID(nullptr)
-	, m_getPageCountMethodID(nullptr)
+	, m_InitializeMethodID(nullptr)
+	, m_GetPageCountMethodID(nullptr)
 	{
 	}
 
@@ -60,8 +69,22 @@ namespace Hnc { namespace Converter {
 	bool PDFBox::Init()
 	{
 		JavaVMOption vmOptions[1] = { 0, };
+#ifdef _WIN32
 		vmOptions[0].optionString = const_cast<char*>(PDFBOX_JAR_CLASSPATH);
-
+#else
+		const uint32_t maxPath = 1024;
+		char pathTemp[maxPath] = { 0, };
+		ssize_t count = readlink("/proc/self/exe", pathTemp, maxPath);
+		const char* exePath = nullptr;
+		if (count != -1) {
+			exePath = dirname(pathTemp);
+		}
+		char optionString[maxPath] = { 0, };
+		memset(optionString, 0x00, maxPath);
+		snprintf(optionString, maxPath, "%s%s/%s", PDFBOX_JAR_CLASSPATH_NAME, exePath, PDFBOX_MODULE_FILE_NAME);
+		vmOptions[0].optionString = optionString;
+		printf("%s\n", optionString);
+#endif
 		JavaVMInitArgs vmArgs = { 0, };
 		vmArgs.options = vmOptions;
 		vmArgs.nOptions = 1;
@@ -86,24 +109,40 @@ namespace Hnc { namespace Converter {
 			PDFBOX_CONVERT_IMAGE_METHOD_NAME, 
 			"(Ljava/lang/String;Ljava/lang/String;I)Z"
 		);
+		_ASSERTE(m_PDFToImageMethodID && "m_Env->GetStaticMethodID() Failed");
+		if (!m_PDFToImageMethodID) {
+			return false;
+		}
 
 		m_PDFToTextMethodID = m_Env->GetStaticMethodID(
 			m_TargetClass, 
 			PDFBOX_CONVERT_TEXT_METHOD_NAME, 
 			"(Ljava/lang/String;Ljava/lang/String;)Z"
 		);
+		_ASSERTE(m_PDFToTextMethodID && "m_Env->GetStaticMethodID() Failed");
+		if (!m_PDFToTextMethodID) {
+			return false;
+		}
 
-		m_initializeMethodID = m_Env->GetStaticMethodID(
+		m_InitializeMethodID = m_Env->GetStaticMethodID(
 			m_TargetClass, 
 			PDFBOX_INITIALIZE_METHOD_NAME, 
 			"(Ljava/lang/String;Ljava/lang/String;)Z"
 		);
+		_ASSERTE(m_InitializeMethodID && "m_Env->GetStaticMethodID() Failed");
+		if (!m_InitializeMethodID) {
+			return false;
+		}
 
-		m_getPageCountMethodID = m_Env->GetStaticMethodID(
+		m_GetPageCountMethodID = m_Env->GetStaticMethodID(
 			m_TargetClass, 
 			PDFBOX_GETPAGECOUNT_METHOD_NAME, 
 			"()I"
 		);
+		_ASSERTE(m_GetPageCountMethodID && "m_Env->GetStaticMethodID() Failed");
+		if (!m_GetPageCountMethodID) {
+			return false;
+		}
 
 		return true;
 	}
@@ -127,21 +166,23 @@ namespace Hnc { namespace Converter {
 		jstring jsoureFile = m_Env->NewStringUTF(_W2U(sourceFile).c_str());
 		jstring jtargetDir = m_Env->NewStringUTF(_W2U(targetDir).c_str());
 
+		int32_t pageCount  = 0;
 		bool result = m_Env->CallStaticBooleanMethod(
 			m_TargetClass, 
-			m_initializeMethodID, 
+			m_InitializeMethodID, 
 			jsoureFile,
 			jtargetDir, 
 			dpi
 		);
 		_ASSERTE(result && "m_Env->CallStaticBooleanMethod() Failed");
 		if (!result) {
-			return false;
+			goto CLEAN_UP;
 		}
 
-		int32_t pageCount = m_Env->CallStaticIntMethod(m_TargetClass, m_getPageCountMethodID);
+		pageCount = m_Env->CallStaticIntMethod(m_TargetClass, m_GetPageCountMethodID);
 		if (pageCount == -1) {
-			return false;
+			result = false;
+			goto CLEAN_UP;
 		}
 
 		result = m_Env->CallStaticBooleanMethod(
@@ -153,6 +194,7 @@ namespace Hnc { namespace Converter {
 		);
 		_ASSERTE(result && "m_Env->CallStaticBooleanMethod() Failed");
 
+CLEAN_UP:
 		m_Env->DeleteLocalRef(jsoureFile);
 		m_Env->DeleteLocalRef(jtargetDir);
 
@@ -185,4 +227,4 @@ namespace Hnc { namespace Converter {
 		return result;
 	}
 
-}} // Hnc::Converter
+}} // PDF::Converter

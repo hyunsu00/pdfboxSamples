@@ -23,7 +23,8 @@ message(STATUS "\${CMAKE_CURRENT_LIST_DIR} = ${CMAKE_CURRENT_LIST_DIR}")
 add_executable (${PROJECT_NAME} 
 	"main.cpp" 
 	"PDFBoxConverter.cpp"
-	"PDFBoxConverter.h" 
+	"PDFBoxConverter.h"
+	"cmdline.h"
 )
 
 ###
@@ -31,7 +32,7 @@ add_executable (${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME} ${JNI_LIBRARIES})
 message(STATUS "\${JNI_LIBRARIES} = ${JNI_LIBRARIES}")
 
-# LINUX #include <experimental/type_traits> 사용위해
+# LINUX GCC C++ 11 지원 -> 버전이 낮으면 지원하지 않는다.
 message(STATUS "\${CMAKE_SYSTEM_NAME} = ${CMAKE_SYSTEM_NAME}")
 if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 	message(STATUS "\${CMAKE_COMPILER_IS_GNUCC} = ${CMAKE_COMPILER_IS_GNUCC}")
