@@ -1,5 +1,4 @@
 ﻿// PDFBoxConverter.cpp
-//
 #include "PDFBoxConverter.h"
 #include <jni.h>
 #include <string>

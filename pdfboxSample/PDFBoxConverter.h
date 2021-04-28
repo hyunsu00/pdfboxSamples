@@ -1,6 +1,4 @@
 ﻿// PDFBoxConverter.h
-//
-
 #pragma once
 
 struct JNIEnv_;
