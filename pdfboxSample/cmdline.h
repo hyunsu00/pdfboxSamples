@@ -1,4 +1,4 @@
-/*
+﻿/*
   Copyright (c) 2009, Hideyuki Tanaka
   All rights reserved.
 
@@ -36,7 +36,9 @@
 #include <typeinfo>
 #include <cstring>
 #include <algorithm>
+#ifdef __GNUC__
 #include <cxxabi.h>
+#endif
 #include <cstdlib>
 
 namespace cmdline{
@@ -102,6 +104,7 @@ Target lexical_cast(const Source &arg)
   return lexical_cast_t<Target, Source, detail::is_same<Target, Source>::value>::cast(arg);
 }
 
+#ifdef __GNUC__
 static inline std::string demangle(const std::string &name)
 {
   int status=0;
@@ -110,6 +113,12 @@ static inline std::string demangle(const std::string &name)
   free(p);
   return ret;
 }
+#else
+static inline std::string demangle(const std::string &name)
+{
+  return name;
+}
+#endif
 
 template <class T>
 std::string readable_typename()

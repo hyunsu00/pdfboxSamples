@@ -18,5 +18,14 @@
     <ClInclude Include="PDFBoxConverter.h">
       <Filter>main Files</Filter>
     </ClInclude>
+    <ClInclude Include="cmdline.h">
+      <Filter>main Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pdf_assert.h">
+      <Filter>main Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pdf_utils.h">
+      <Filter>main Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

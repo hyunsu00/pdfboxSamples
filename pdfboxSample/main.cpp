@@ -8,9 +8,11 @@
 #include <iostream> // std::cout
 #include <algorithm> // std::transform
 #include <stdlib.h> // mbstowcs()
-#include "cmdline.h"
+#include "cmdline.h" // cmdline::parser
+#include "pdf_utils.h"
 
 #ifdef _WIN32
+#	include <stdio.h>
 #else
 #   include <string.h> // strdup
 #   include <sys/stat.h> // stat
@@ -40,68 +42,48 @@ int main(int argc, char* argv[])
     std::string source = parser.get<std::string>("source");
     std::string result = parser.get<std::string>("result");
     std::string type = parser.get<std::string>("type");
-	// type 문자열 소문자로 변경
-	std::transform(type.begin(), type.end(), type.begin(), ::tolower);
 
-    struct FreeDeleter
     {
-        inline void operator()(void* ptr) const
-        {
-            free(ptr);
-        }
-    }; // struct FreeDeleter
-    using AutoMemoryPtr = std::unique_ptr<char, FreeDeleter>;
-
-	std::string rawFileName;
-#ifdef _WIN32
-
-#else
-    {
-        auto _dirExists = [](const char* const dirPath) -> bool {
-            struct stat info;
-            if (stat(dirPath, &info) == 0 && S_ISDIR(info.st_mode)) {
-                return true;
-            }
-
-            return false;
-        };
-        auto _addDirSeparator = [](const std::string& dirPath) -> std::string {
-            std::string addDirPath = dirPath;
-            if (dirPath.back() != '/') {
-                addDirPath += "/";
-            }
-            return addDirPath;
-        };
-        auto _removeExt = [](const std::string& fileName) -> std::string {
-            size_t lastIndex = fileName.find_last_of("."); 
-            std::string rawName = fileName.substr(0, lastIndex);
-            return rawName;
-        };
+        // type 문자열 소문자로 변경
+        std::transform(type.begin(), type.end(), type.begin(), ::tolower);
 
         // PDF 파일이 존재하는지 체크
-        if (access(source.c_str(), F_OK)) {
-            std::cout << "source file is not valid path" << std::endl;
+        if (!pathFileExists(source.c_str())) {
+            std::cerr << "source file is not valid path";
             return 0;
         }
 
         // 결과 폴더가 존재하는지 체크
-        if (!_dirExists(result.c_str())) {
-            std::cout << "result directory is not exist" << std::endl;
+        if (!pathIsDirectory(result.c_str())) {
+            std::cerr << "result directory is not exist";
             return 0;
         }
-        result = _addDirSeparator(result);
-
-        rawFileName = _removeExt(basename(AutoMemoryPtr(strdup(source.c_str())).get()));
+        result = pathAddSeparator(result);
     }
-#endif
 
-	auto _A2U = [](const std::string& str) -> std::wstring {
-		std::vector<wchar_t> wstrVector(str.length() + 1, 0);
-		mbstowcs(&wstrVector[0], str.c_str(), wstrVector.size());
-		return &wstrVector[0];
-	};
 	const std::wstring samplePath = _A2U(source);
     const std::wstring resultDir= _A2U(result);
+
+#ifdef _WIN32
+	// 환경변수 설정
+	{
+		std::wstring exePath = _A2U(argv[0]); // exe 실행경로
+		wchar_t drive[_MAX_DRIVE] = { 0, }; // 드라이브 명
+		wchar_t dir[_MAX_DIR] = { 0, }; // 디렉토리 경로
+		_wsplitpath_s(exePath.c_str(), drive, _MAX_DRIVE, dir, _MAX_DIR, nullptr, 0, nullptr, 0);
+		std::wstring exeDir = std::wstring(drive) + dir;
+
+
+		size_t requiredSize;
+		_wgetenv_s(&requiredSize, nullptr, 0, L"PATH");
+		std::vector<wchar_t> envPath(requiredSize, 0);
+		_wgetenv_s(&requiredSize, &envPath[0], requiredSize, L"PATH");
+
+		std::wstring addEnvPath = std::wstring(exeDir.c_str()) + L"jre/bin;" + exeDir.c_str() + L"jre/bin/server;";
+		addEnvPath += &envPath[0];
+		_wputenv_s(L"PATH", addEnvPath.c_str());
+	}
+#endif
 
 	// PDF -> PNG, PDF -> TXT 변환
 	{
@@ -112,6 +94,7 @@ int main(int argc, char* argv[])
 			return 0;
 		}
 
+        std::cout << "[Begin] : PDFBox pdf to " << type << std::endl;
 		std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 		{
 			if (type == "png") {
@@ -127,9 +110,10 @@ int main(int argc, char* argv[])
 			}
 		}
 		std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
-        std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
-        std::cout << "Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count() << "[ns]" << std::endl;
-        std::cout << "Time difference (sec) = " <<  (std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()) /1000000.0  << std::endl;
+        std::cout << "    Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[µs]" << std::endl;
+        std::cout << "    Time difference = " << std::chrono::duration_cast<std::chrono::nanoseconds> (end - begin).count() << "[ns]" << std::endl;
+        std::cout << "    Time difference (sec) = " <<  (std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count()) /1000000.0  << std::endl;
+        std::cout << "[End] : PDFBox pdf to " << type << std::endl;
 
 		pdfConverter.Fini();
 	}

@@ -3,51 +3,28 @@
 #include <jni.h>
 #include <string>
 #include <memory>
-#include "debug_assert.h"
+#include "pdf_assert.h"
+#include "pdf_utils.h"
 
 #ifdef _WIN32
+#	include <Windows.h>
 #else
 #	include <libgen.h> // dirname
 #	include <unistd.h> // readlink
 #	include <memory.h> // memset
 #endif
 
-static const char* const PDFBOX_JAR_CLASSPATH_NAME = u8"-Djava.class.path=";
-static const char* const PDFBOX_MODULE_FILE_NAME = u8"PDFBoxModule.jar";
-static const char* const PDFBOX_JAR_CLASSPATH = u8"-Djava.class.path=./PDFBoxModule.jar;./lib/PDFBoxModule.jar;";
-static const char* const PDFBOX_CLASS_NAME = u8"PDFBoxModule";
-static const char* const PDFBOX_CONVERT_IMAGE_METHOD_NAME = u8"ConvertPDFToImage";
-static const char* const PDFBOX_CONVERT_TEXT_METHOD_NAME = u8"ConvertPDFToText";
-static const char* const PDFBOX_INITIALIZE_METHOD_NAME = u8"PDFModuleInitialize";
-static const char* const PDFBOX_GETPAGECOUNT_METHOD_NAME = u8"GetPDFPageCount";
+static const wchar_t* const PDFBOX_JAR_CLASSPATH_NAME = L"-Djava.class.path=";
+static const wchar_t* const PDFBOX_MODULE_FILE_NAME = L"PDFBoxModule.jar";
+static const wchar_t* const PDFBOX_CLASS_NAME = L"PDFBoxModule";
+static const wchar_t* const PDFBOX_CONVERT_IMAGE_METHOD_NAME = L"ConvertPDFToImage";
+static const wchar_t* const PDFBOX_CONVERT_TEXT_METHOD_NAME = L"ConvertPDFToText";
+static const wchar_t* const PDFBOX_INITIALIZE_METHOD_NAME = L"PDFModuleInitialize";
+static const wchar_t* const PDFBOX_GETPAGECOUNT_METHOD_NAME = L"GetPDFPageCount";
 
 namespace PDF { namespace Converter {
 
-	static std::string _W2U(const std::wstring& wstr)
-	{
-		std::string ustr;
-		for (size_t i = 0; i < wstr.size(); i++){
-			wchar_t w = wstr[i];
-			if (w <= 0x7f) {
-				ustr.push_back((char)w);
-			} else if (w <= 0x7ff) {
-				ustr.push_back(0xc0 | ((w >> 6)& 0x1f));
-				ustr.push_back(0x80| (w & 0x3f));
-			} else if (w <= 0xffff) {
-				ustr.push_back(0xe0 | ((w >> 12)& 0x0f));
-				ustr.push_back(0x80| ((w >> 6) & 0x3f));
-				ustr.push_back(0x80| (w & 0x3f));
-			} else if (w <= 0x10ffff) {
-				ustr.push_back(0xf0 | ((w >> 18)& 0x07));
-				ustr.push_back(0x80| ((w >> 12) & 0x3f));
-				ustr.push_back(0x80| ((w >> 6) & 0x3f));
-				ustr.push_back(0x80| (w & 0x3f));
-			} else {
-				ustr.push_back('?');
-			}
-		}
-		return ustr;
-	}
+	
 
 	PDFBox::PDFBox()
 	: m_Env(nullptr)
@@ -69,7 +46,21 @@ namespace PDF { namespace Converter {
 	{
 		JavaVMOption vmOptions[1] = { 0, };
 #ifdef _WIN32
-		vmOptions[0].optionString = const_cast<char*>(PDFBOX_JAR_CLASSPATH);
+		// 윈도우에서는 자바 클래스 패스가 상대경로도 가능하지만 리눅스에서는 상대경로 지정시
+		// 실패해서 리눅스와 동일하게 절대경로로 변경한다.
+		wchar_t exePath[_MAX_PATH] = { 0, }; // exe 실행경로
+		wchar_t drive[_MAX_DRIVE] = { 0, }; // 드라이브 명
+		wchar_t dir[_MAX_DIR] = { 0, }; // 디렉토리 경로
+		::GetModuleFileNameW(nullptr, exePath, sizeof(exePath));
+		_wsplitpath_s(exePath, drive, _MAX_DRIVE, dir, _MAX_DIR, nullptr, 0, nullptr, 0);
+		std::wstring exeDir = std::wstring(drive) + dir;
+
+		wchar_t optionStringW[_MAX_PATH] = { 0, };
+		_snwprintf_s(optionStringW, _countof(optionStringW), _TRUNCATE, L"%s%s%s", PDFBOX_JAR_CLASSPATH_NAME, exeDir.c_str(), PDFBOX_MODULE_FILE_NAME);
+
+		char optionStringA[_MAX_PATH] = { 0, };
+		strcpy_s(optionStringA, sizeof(optionStringA), _U2A(optionStringW).c_str());
+		vmOptions[0].optionString = optionStringA;
 #else
 		const uint32_t maxPath = 1024;
 		char pathTemp[maxPath] = { 0, };
@@ -80,10 +71,11 @@ namespace PDF { namespace Converter {
 		}
 		char optionString[maxPath] = { 0, };
 		memset(optionString, 0x00, maxPath);
-		snprintf(optionString, maxPath, "%s%s/%s", PDFBOX_JAR_CLASSPATH_NAME, exePath, PDFBOX_MODULE_FILE_NAME);
+		snprintf(optionString, maxPath, "%s%s/%s", _U2A(PDFBOX_JAR_CLASSPATH_NAME).c_str(), exePath, _U2A(PDFBOX_MODULE_FILE_NAME).c_str());
 		vmOptions[0].optionString = optionString;
 		printf("%s\n", optionString);
 #endif
+
 		JavaVMInitArgs vmArgs = { 0, };
 		vmArgs.options = vmOptions;
 		vmArgs.nOptions = 1;
@@ -97,7 +89,7 @@ namespace PDF { namespace Converter {
 		}
 
 		// find target class and load
-		m_TargetClass = m_Env->FindClass(PDFBOX_CLASS_NAME);
+		m_TargetClass = m_Env->FindClass(_U2A(PDFBOX_CLASS_NAME).c_str());
 		_ASSERTE(m_TargetClass && "m_Env->FindClass() Failed");
 		if (!m_TargetClass) {
 			return false;
@@ -105,7 +97,7 @@ namespace PDF { namespace Converter {
 
 		m_PDFToImageMethodID = m_Env->GetStaticMethodID(
 			m_TargetClass,
-			PDFBOX_CONVERT_IMAGE_METHOD_NAME, 
+			_U2A(PDFBOX_CONVERT_IMAGE_METHOD_NAME).c_str(),
 			"(Ljava/lang/String;Ljava/lang/String;I)Z"
 		);
 		_ASSERTE(m_PDFToImageMethodID && "m_Env->GetStaticMethodID() Failed");
@@ -115,7 +107,7 @@ namespace PDF { namespace Converter {
 
 		m_PDFToTextMethodID = m_Env->GetStaticMethodID(
 			m_TargetClass, 
-			PDFBOX_CONVERT_TEXT_METHOD_NAME, 
+			_U2A(PDFBOX_CONVERT_TEXT_METHOD_NAME).c_str(),
 			"(Ljava/lang/String;Ljava/lang/String;)Z"
 		);
 		_ASSERTE(m_PDFToTextMethodID && "m_Env->GetStaticMethodID() Failed");
@@ -125,7 +117,7 @@ namespace PDF { namespace Converter {
 
 		m_InitializeMethodID = m_Env->GetStaticMethodID(
 			m_TargetClass, 
-			PDFBOX_INITIALIZE_METHOD_NAME, 
+			_U2A(PDFBOX_INITIALIZE_METHOD_NAME).c_str(),
 			"(Ljava/lang/String;Ljava/lang/String;)Z"
 		);
 		_ASSERTE(m_InitializeMethodID && "m_Env->GetStaticMethodID() Failed");
@@ -135,7 +127,7 @@ namespace PDF { namespace Converter {
 
 		m_GetPageCountMethodID = m_Env->GetStaticMethodID(
 			m_TargetClass, 
-			PDFBOX_GETPAGECOUNT_METHOD_NAME, 
+			_U2A(PDFBOX_GETPAGECOUNT_METHOD_NAME).c_str(),
 			"()I"
 		);
 		_ASSERTE(m_GetPageCountMethodID && "m_Env->GetStaticMethodID() Failed");
@@ -162,8 +154,8 @@ namespace PDF { namespace Converter {
 			return false;
 		}
 
-		jstring jsoureFile = m_Env->NewStringUTF(_W2U(sourceFile).c_str());
-		jstring jtargetDir = m_Env->NewStringUTF(_W2U(targetDir).c_str());
+		jstring jsoureFile = m_Env->NewStringUTF(_U2A(sourceFile).c_str());
+		jstring jtargetDir = m_Env->NewStringUTF(_U2A(targetDir).c_str());
 
 		int32_t pageCount  = 0;
 		bool result = m_Env->CallStaticBooleanMethod(
@@ -209,8 +201,8 @@ CLEAN_UP:
 			return false;
 		}
 
-		jstring jsoureFile = m_Env->NewStringUTF(_W2U(sourceFile).c_str());
-		jstring jtargetDir = m_Env->NewStringUTF(_W2U(targetDir).c_str());
+		jstring jsoureFile = m_Env->NewStringUTF(_U2A(sourceFile).c_str());
+		jstring jtargetDir = m_Env->NewStringUTF(_U2A(targetDir).c_str());
 
 		bool result = m_Env->CallStaticBooleanMethod(
 			m_TargetClass,

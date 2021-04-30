@@ -97,21 +97,22 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./Java/x86/include;./Java/x86/include/Win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Extern/Java/x86/include;./Extern/Java/x86/include/Win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++17 %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>4566;4101;4333;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>./java/x86/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>jvm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>./Extern/java/x86/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>jvm.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>jvm.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "./lib/PDFBoxModule.jar" "$(OutDir)" /d /h /y /f
-xcopy "./java/x86/jre/*.*" "$(OutDir)/jre/" /e /d /h /y /f
+      <Command>$(ProjectDir)Extern/7-Zip/7z x "$(ProjectDir)Extern/java/x86/jre.zip" -o"$(OutDir)" -y
+xcopy "./lib/PDFBoxModule.jar" "$(OutDir)" /d /h /y /f
 xcopy "./samples/*.*" "$(OutDir)/samples/" /e /d /h /y /f</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -122,21 +123,22 @@ xcopy "./samples/*.*" "$(OutDir)/samples/" /e /d /h /y /f</Command>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./Java/x64/include;./Java/x64/include/Win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Extern/Java/x64/include;./Extern/Java/x64/include/Win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++17 %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>4566;4101;4333;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>jvm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jvm.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>jvm.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
-      <AdditionalLibraryDirectories>./java/x64/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>./Extern/java/x64/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "./lib/PDFBoxModule.jar" "$(OutDir)" /d /h /y /f
-xcopy "./java/x64/jre/*.*" "$(OutDir)/jre/" /e /d /h /y /f
+      <Command>$(ProjectDir)Extern/7-Zip/7z x "$(ProjectDir)Extern/java/x64/jre.zip" -o"$(OutDir)" -y
+xcopy "./lib/PDFBoxModule.jar" "$(OutDir)" /d /h /y /f
 xcopy "./samples/*.*" "$(OutDir)/samples/" /e /d /h /y /f</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -149,23 +151,24 @@ xcopy "./samples/*.*" "$(OutDir)/samples/" /e /d /h /y /f</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./Java/x86/include;./Java/x86/include/Win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Extern/Java/x86/include;./Extern/Java/x86/include/Win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++17 %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>4566;4101;4333;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>./java/x86/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>jvm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>./Extern/java/x86/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>jvm.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>jvm.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "./lib/PDFBoxModule.jar" "$(OutDir)" /d /h /y /f
-xcopy "./java/x86/jre/*.*" "$(OutDir)/jre/" /e /d /h /y /f
+      <Command>$(ProjectDir)Extern/7-Zip/7z x "$(ProjectDir)Extern/java/x86/jre.zip" -o"$(OutDir)" -y
+xcopy "./lib/PDFBoxModule.jar" "$(OutDir)" /d /h /y /f
 xcopy "./samples/*.*" "$(OutDir)/samples/" /e /d /h /y /f</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -178,23 +181,24 @@ xcopy "./samples/*.*" "$(OutDir)/samples/" /e /d /h /y /f</Command>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./Java/x64/include;./Java/x64/include/Win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./Extern/Java/x64/include;./Extern/Java/x64/include/Win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++17 %(AdditionalOptions)</AdditionalOptions>
+      <DisableSpecificWarnings>4566;4101;4333;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>jvm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>jvm.lib;Shlwapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <DelayLoadDLLs>jvm.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
-      <AdditionalLibraryDirectories>./java/x64/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>./Extern/java/x64/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "./lib/PDFBoxModule.jar" "$(OutDir)" /d /h /y /f
-xcopy "./java/x64/jre/*.*" "$(OutDir)/jre/" /e /d /h /y /f
+      <Command>$(ProjectDir)Extern/7-Zip/7z x "$(ProjectDir)Extern/java/x64/jre.zip" -o"$(OutDir)" -y
+xcopy "./lib/PDFBoxModule.jar" "$(OutDir)" /d /h /y /f
 xcopy "./samples/*.*" "$(OutDir)/samples/" /e /d /h /y /f</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -203,6 +207,9 @@ xcopy "./samples/*.*" "$(OutDir)/samples/" /e /d /h /y /f</Command>
     <ClCompile Include="PDFBoxConverter.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cmdline.h" />
+    <ClInclude Include="pdf_assert.h" />
+    <ClInclude Include="pdf_utils.h" />
     <ClInclude Include="PDFBoxConverter.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
