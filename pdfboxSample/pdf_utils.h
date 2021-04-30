@@ -6,7 +6,7 @@
 #include <stdlib.h> // wcstombs, mbstowcs
 
 #ifdef _WIN32
-#	include <Shlwapi.h>
+#	include <Shlwapi.h> // PathFileExistsA, PathIsDirectoryA, PathFindFileNameA
 #else
 #   include <sys/stat.h> // stat
 #	include <unistd.h> // access
@@ -24,6 +24,15 @@ namespace {
 		}
 	}; // struct FreeDeleter
 	using AutoMemoryPtr = std::unique_ptr<char, FreeDeleter>;
+
+	struct FileCloseDeleter
+	{
+		inline void operator()(FILE* fp) const
+		{
+			fclose(fp);
+		}
+	}; // struct FileCloseDeleter 
+	using AutoFilePtr = std::unique_ptr<std::remove_pointer<FILE*>::type, FileCloseDeleter>;
 
 	auto getFileContents = [](const char* filename, size_t* retlen) -> AutoMemoryPtr {
 		FILE* file = fopen(filename, "rb");
@@ -64,28 +73,38 @@ namespace {
 	};
 
 	auto _U2UTF8 = [](const std::wstring& wstr) -> std::string {
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable:4333)
+#endif
 		std::string ustr;
 		for (size_t i = 0; i < wstr.size(); i++) {
 			wchar_t w = wstr[i];
 			if (w <= 0x7f) {
 				ustr.push_back((char)w);
-			} else if (w <= 0x7ff) {
+			}
+			else if (w <= 0x7ff) {
 				ustr.push_back(0xc0 | ((w >> 6) & 0x1f));
 				ustr.push_back(0x80 | (w & 0x3f));
-			} else if (w <= 0xffff) {
+			}
+			else if (w <= 0xffff) {
 				ustr.push_back(0xe0 | ((w >> 12) & 0x0f));
 				ustr.push_back(0x80 | ((w >> 6) & 0x3f));
 				ustr.push_back(0x80 | (w & 0x3f));
-			} else if (w <= 0x10ffff) {
+			}
+			else if (w <= 0x10ffff) {
 				ustr.push_back(0xf0 | ((w >> 18) & 0x07));
 				ustr.push_back(0x80 | ((w >> 12) & 0x3f));
 				ustr.push_back(0x80 | ((w >> 6) & 0x3f));
 				ustr.push_back(0x80 | (w & 0x3f));
-			} else {
+			}
+			else {
 				ustr.push_back('?');
 			}
 		}
-
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 		return ustr;
 	};
 
@@ -134,7 +153,7 @@ namespace {
 #endif
 		return fileName;
 	};
-	
+
 	auto removeExt = [](const std::string& fileName) -> std::string {
 		size_t lastIndex = fileName.find_last_of(".");
 		std::string rawName = fileName.substr(0, lastIndex);

@@ -101,7 +101,7 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>./Extern/Java/x86/include;./Extern/Java/x86/include/Win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++17 %(AdditionalOptions)</AdditionalOptions>
-      <DisableSpecificWarnings>4566;4101;4333;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4566;4101;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -127,7 +127,7 @@ xcopy "./samples/*.*" "$(OutDir)/samples/" /e /d /h /y /f</Command>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>./Extern/Java/x64/include;./Extern/Java/x64/include/Win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++17 %(AdditionalOptions)</AdditionalOptions>
-      <DisableSpecificWarnings>4566;4101;4333;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4566;4101;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -155,7 +155,7 @@ xcopy "./samples/*.*" "$(OutDir)/samples/" /e /d /h /y /f</Command>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>./Extern/Java/x86/include;./Extern/Java/x86/include/Win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++17 %(AdditionalOptions)</AdditionalOptions>
-      <DisableSpecificWarnings>4566;4101;4333;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4566;4101;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -185,7 +185,7 @@ xcopy "./samples/*.*" "$(OutDir)/samples/" /e /d /h /y /f</Command>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>./Extern/Java/x64/include;./Extern/Java/x64/include/Win32;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/std:c++17 %(AdditionalOptions)</AdditionalOptions>
-      <DisableSpecificWarnings>4566;4101;4333;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4566;4101;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
